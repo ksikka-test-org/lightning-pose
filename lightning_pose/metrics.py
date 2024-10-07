@@ -57,7 +57,7 @@ def temporal_norm(keypoints_pred: Union[np.ndarray, torch.Tensor]) -> np.ndarray
     # compute loss with already-implemented class
     t_norm = t_loss.compute_loss(keypoints_pred)
     # prepend nan vector; no temporal norm for the very first frame
-    t_norm = np.vstack([np.nan * np.zeros((1, t_norm.shape[1])), t_norm.numpy()])
+    t_norm = np.vstack([np.nan * np.zeros((1, t_norm.shape[1])), t_norm.detach().cpu().numpy()])
 
     return t_norm
 

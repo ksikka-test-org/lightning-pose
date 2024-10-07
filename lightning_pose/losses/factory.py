@@ -2,7 +2,6 @@
 
 from typing import Dict, List, Literal, Optional, Tuple, Union
 
-import lightning.pytorch as pl
 import torch
 from torchtyping import TensorType
 
@@ -15,7 +14,7 @@ __all__ = [
 ]
 
 
-class LossFactory(pl.LightningModule):
+class LossFactory:
     """Factory object that contains an object for each specified loss."""
 
     def __init__(
@@ -23,8 +22,6 @@ class LossFactory(pl.LightningModule):
         losses_params_dict: Dict[str, dict],
         data_module: Union[BaseDataModule, UnlabeledDataModule],
     ) -> None:
-
-        super().__init__()
         self.losses_params_dict = losses_params_dict
         self.data_module = data_module
 

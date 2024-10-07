@@ -82,10 +82,10 @@ def test_heatmap_js_loss():
     from lightning_pose.data.utils import generate_heatmaps
     from lightning_pose.losses.losses import HeatmapJSLoss
 
-    heatmap_loss = HeatmapJSLoss()
+    heatmap_loss = HeatmapJSLoss(device=device)
 
     m = 100  # max pixel
-    keypoints = m * torch.rand((3, 7, 2))
+    keypoints = m * torch.rand((3, 7, 2), device=device)
     targets = generate_heatmaps(keypoints, height=m, width=m, output_shape=(32, 32))
     predictions = targets.clone()
 
@@ -126,7 +126,9 @@ def test_pca_singleview_loss(cfg, base_data_module):
     # ----------------------------
     # test pca loss on toy dataset
     # ----------------------------
-    keypoints_pred = torch.randn(20, base_data_module.dataset.num_targets)
+    keypoints_pred = torch.randn(
+        20, base_data_module.dataset.num_targets, device=device
+    )
     loss, logs = pca_loss(keypoints_pred, stage=stage)
     assert loss.shape == torch.Size([])
     assert loss > 0.0
@@ -155,7 +157,9 @@ def test_pca_multiview_loss(cfg, base_data_module):
     # ----------------------------
     # test pca loss on toy dataset
     # ----------------------------
-    keypoints_pred = torch.randn(20, base_data_module.dataset.num_targets)
+    keypoints_pred = torch.randn(
+        20, base_data_module.dataset.num_targets, device=device
+    )
     # shape = (batch_size, num_keypoints * 2)
     # this all happens in PCALoss.__call__() but keeping it since we want to look at pre reduction
     # loss
@@ -175,7 +179,9 @@ def test_pca_multiview_loss(cfg, base_data_module):
     )
 
     # draw some numbers again, and reshape within the class
-    keypoints_pred = torch.randn(20, base_data_module.dataset.num_targets)
+    keypoints_pred = torch.randn(
+        20, base_data_module.dataset.num_targets, device=device
+    )
 
     loss, logs = pca_loss(keypoints_pred, stage=stage)
 
@@ -227,7 +233,7 @@ def test_temporal_loss():
 
     from lightning_pose.losses.losses import TemporalLoss
 
-    temporal_loss = TemporalLoss(epsilon=0.0)
+    temporal_loss = TemporalLoss(epsilon=0.0, device=device)
 
     # make sure zero is returned for constant predictions (along dim 0)
     predicted_keypoints = torch.ones(size=(12, 32), device=device)
@@ -249,7 +255,7 @@ def test_temporal_loss():
     assert loss > 0.0
 
     # check against actual norm
-    predicted_keypoints = torch.Tensor(
+    predicted_keypoints = torch.tensor(
         [[0.0, 0.0], [np.sqrt(2.0), np.sqrt(2.0)]], device=device
     )
     loss, logs = temporal_loss(predicted_keypoints, stage=stage)
@@ -258,7 +264,7 @@ def test_temporal_loss():
     # test epsilon
     s2 = np.sqrt(2.0)
     s3 = np.sqrt(3.0)
-    predicted_keypoints = torch.Tensor(
+    predicted_keypoints = torch.tensor(
         [[0.0, 0.0], [s2, s2], [s3 + s2, s3 + s2]], device=device
     )
     # [s2, s2] -> 2
@@ -266,7 +272,7 @@ def test_temporal_loss():
     loss, logs = temporal_loss(predicted_keypoints, stage=stage)
     assert (loss.item() - (2 + np.sqrt(6))) < 1e-6
 
-    temporal_loss = TemporalLoss(epsilon=2.1)
+    temporal_loss = TemporalLoss(epsilon=2.1, device=device)
     loss, logs = temporal_loss(predicted_keypoints, stage=stage)
     # due to epsilon the "2" entry will be zeroed out
     assert (loss.item() - np.sqrt(6)) < 1e-6
@@ -276,7 +282,7 @@ def test_temporal_loss_multi_epsilon_rectification():
     from lightning_pose.losses.losses import TemporalLoss
 
     batch_size = 6
-    temporal_loss = TemporalLoss(epsilon=[0.1, 0.0, 0.5])
+    temporal_loss = TemporalLoss(epsilon=[0.1, 0.0, 0.5], device=device)
     # define a fake batch of loss values
     # all keypoints have the same value in the batch dimension
     loss_tensor = (
@@ -291,7 +297,7 @@ def test_temporal_loss_multi_epsilon_rectification():
     assert torch.all(rectified[:, 1] == 1.0)
     assert torch.all(rectified[:, 2] == 0.0)
 
-    temporal_loss = TemporalLoss(epsilon=[0.1, 0.0, 0.3])
+    temporal_loss = TemporalLoss(epsilon=[0.1, 0.0, 0.3], device=device)
     rectified = temporal_loss.rectify_epsilon(loss_tensor)
     assert rectified.shape == torch.Size([batch_size - 1, 3])
     assert torch.all(rectified[:, 0] == 0.0)
@@ -302,7 +308,7 @@ def test_temporal_loss_multi_epsilon_rectification():
     loss_tensor_fancier = torch.tensor(
         data=[[1.0, 2.0, 1.5], [0.05, 0.12, 0.2]], dtype=torch.float32
     )
-    temporal_loss = TemporalLoss(epsilon=[0.1, 0.15, 0.3])
+    temporal_loss = TemporalLoss(epsilon=[0.1, 0.15, 0.3], device=device)
     rectified = temporal_loss.rectify_epsilon(loss_tensor_fancier)
     assert rectified.shape == (2, 3)
     assert torch.allclose(rectified[0, :], torch.tensor([0.9, 1.85, 1.2]))
@@ -335,6 +341,7 @@ def test_unimodal_mse_loss():
         original_image_width=img_size,
         downsampled_image_height=img_size_ds,
         downsampled_image_width=img_size_ds,
+        device=device,
     )
     loss, logs = uni_loss(
         keypoints_pred_augmented=keypoints_pred,
@@ -380,6 +387,7 @@ def test_unimodal_kl_loss():
         original_image_width=img_size,
         downsampled_image_height=img_size_ds,
         downsampled_image_width=img_size_ds,
+        device=device,
     )
     loss, logs = uni_loss(
         keypoints_pred_augmented=keypoints_pred,
@@ -425,6 +433,7 @@ def test_unimodal_js_loss():
         original_image_width=img_size,
         downsampled_image_height=img_size_ds,
         downsampled_image_width=img_size_ds,
+        device=device,
     )
     loss, logs = uni_loss(
         keypoints_pred_augmented=keypoints_pred,
@@ -444,7 +453,7 @@ def test_regression_mse_loss():
 
     from lightning_pose.losses.losses import RegressionMSELoss
 
-    mse_loss = RegressionMSELoss()
+    mse_loss = RegressionMSELoss(device=device)
 
     # when predictions equal targets, should return zero
     true_keypoints = torch.ones(size=(12, 32), device=device)
@@ -469,8 +478,10 @@ def test_regression_rmse_loss():
 
     from lightning_pose.losses.losses import RegressionMSELoss, RegressionRMSELoss
 
-    mse_loss = RegressionMSELoss(log_weight=np.log(0.5))  # set log_weight so weight=1
-    rmse_loss = RegressionRMSELoss(log_weight=np.log(0.5))  # set log_weight so weight=1
+    # set log_weight so weight=1
+    mse_loss = RegressionMSELoss(log_weight=np.log(0.5), device=device)
+    # set log_weight so weight=1
+    rmse_loss = RegressionRMSELoss(log_weight=np.log(0.5), device=device)
 
     # when predictions equal targets, should return zero
     true_keypoints = torch.ones(size=(12, 32), device=device)
@@ -492,7 +503,7 @@ def test_regression_rmse_loss():
     mse, _ = mse_loss(labels, preds, stage=stage)
     rmse, _ = rmse_loss(labels, preds, stage=stage)
     assert rmse == true_rmse
-    assert mse == true_rmse ** 2.0
+    assert mse == true_rmse**2.0
 
 
 def test_get_loss_classes():
