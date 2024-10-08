@@ -323,24 +323,27 @@ def predict_dataset(
 
     """
 
+    print(1)
     delete_model = False
     if model is None:
         model = load_model_from_checkpoint(
             cfg=cfg, ckpt_file=ckpt_file, eval=True, data_module=data_module,
         )
         delete_model = True
-
+    print(2)
     delete_trainer = False
     if trainer is None:
         trainer = pl.Trainer(devices=1, accelerator="auto")
         delete_trainer = True
 
+    print(3)
     labeled_preds = trainer.predict(
         model=model,
         dataloaders=data_module.full_labeled_dataloader(),
         return_predictions=True,
     )
 
+    print(4)
     pred_handler = PredictionHandler(cfg=cfg, data_module=data_module, video_file=None)
     labeled_preds_df = pred_handler(preds=labeled_preds)
     if isinstance(labeled_preds_df, dict):

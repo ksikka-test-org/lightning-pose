@@ -72,13 +72,13 @@ training:
   # epoch at which backbone network weights begin updating
   unfreezing_epoch: 20
   # min training epochs; training cannot terminate before. compare to unfreezing_epoch, check_val_every_n_epoch, early_stop_patience
-  min_epochs: 300
+  min_epochs: 0
   # max training epochs; training may exit before due to early stopping
-  max_epochs: 300
+  max_epochs: 8
   # frequency to log training metrics (one step is one batch)
-  log_every_n_steps: 1
+  log_every_n_steps: 2
   # frequency to log validation metrics
-  check_val_every_n_epoch: 10
+  check_val_every_n_epoch: 4
   # select gpu for training
   gpu_id: 0
   # rng seed for labeled batches
@@ -102,7 +102,7 @@ model:
   # - "unimodal_mse"
   # - "unimodal_kl"
   # - null: if null, assume a model is supervised.
-  losses_to_use: ["pca_singleview"]
+  losses_to_use: null
   # backbone network
   backbone: resnet50_animal_ap10k
   # prediction mode: regression | heatmap | heatmap_mhcrnn (context)

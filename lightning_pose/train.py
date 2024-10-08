@@ -95,7 +95,7 @@ def train(cfg: DictConfig) -> None:
     # set up trainer
     trainer = pl.Trainer(  # TODO: be careful with devices when scaling to multiple gpus
         accelerator="gpu",  # TODO: control from outside
-        devices=1,  # TODO: control from outside
+        devices=2,  # TODO: control from outside
         max_epochs=cfg.training.max_epochs,
         min_epochs=cfg.training.min_epochs,
         check_val_every_n_epoch=min(
@@ -113,6 +113,27 @@ def train(cfg: DictConfig) -> None:
     # train model!
     trainer.fit(model=model, datamodule=data_module)
 
+    if not trainer.is_global_zero:
+        return
+
+    # Rebuild trainer with devices = 1.
+    trainer=pl.Trainer(  # TODO: be careful with devices when scaling to multiple gpus
+            accelerator="gpu",  # TODO: control from outside
+            devices=1,  # TODO: control from outside
+            max_epochs=cfg.training.max_epochs,
+            min_epochs=cfg.training.min_epochs,
+            check_val_every_n_epoch=min(
+                cfg.training.check_val_every_n_epoch,
+                cfg.training.max_epochs,  # for debugging or otherwise training for a short time
+            ),
+            log_every_n_steps=cfg.training.log_every_n_steps,
+            callbacks=callbacks,
+            logger=logger,
+            limit_train_batches=limit_train_batches,
+            accumulate_grad_batches=cfg.training.get("accumulate_grad_batches", 1),
+            profiler=cfg.training.get("profiler", None),
+        )
+    
     # ----------------------------------------------------------------------------------
     # Post-training analysis
     # ----------------------------------------------------------------------------------
