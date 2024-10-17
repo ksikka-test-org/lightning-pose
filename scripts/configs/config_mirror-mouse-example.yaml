@@ -50,9 +50,9 @@ training:
   # dlc-top-down- dlc augmentations plus vertical and horizontal flips
   imgaug: dlc
   # batch size of labeled data during training
-  train_batch_size: 16
+  train_batch_size: 4
   # batch size of labeled data during validation
-  val_batch_size: 16
+  val_batch_size: 4
   # batch size of labeled data during test
   # TODO: this is actually used interchangeably with sequence length in prediction. not amazing.
   test_batch_size: 16
@@ -64,7 +64,7 @@ training:
   # >1: number of total train frames used for training
   train_frames: 1
   # number of gpus to train a single model
-  num_gpus: 1
+  num_gpus: 4
   # number of cpu workers for data loaders
   num_workers: 4
   # epochs over which to assess validation metrics for early stopping
@@ -100,7 +100,7 @@ model:
   # - "unimodal_mse"
   # - "unimodal_kl"
   # - null: if null, assume a model is supervised.
-  losses_to_use: ["pca_singleview"]
+  losses_to_use: null
   # backbone network
   backbone: resnet50_animal_ap10k
   # prediction mode: regression | heatmap | heatmap_mhcrnn (context)

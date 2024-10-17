@@ -279,7 +279,6 @@ class PCALoss(Loss):
         columns_for_singleview_pca: Optional[Union[ListConfig, List]] = None,
         data_module: Optional[Union[BaseDataModule, UnlabeledDataModule]] = None,
         log_weight: float = 0.0,
-        device: str = _TORCH_DEVICE,
         **kwargs,
     ) -> None:
         super().__init__(data_module=data_module, log_weight=log_weight)
@@ -294,40 +293,45 @@ class PCALoss(Loss):
         # DataExtractor; we will also pass a "no_augmentation" arg to DataExtractor which will
         # rebuild the data module with only resizing augmentations, then extract the data.
 
-        # initialize keypoint pca module
-        # this module will fit pca on training data, and will define the error metric
-        # and fuction to be used in model training.
-        self.pca = KeypointPCA(
-            loss_type=self.loss_name,
-            data_module=data_module,
-            components_to_keep=components_to_keep,
-            empirical_epsilon_percentile=empirical_epsilon_percentile,
-            mirrored_column_matches=mirrored_column_matches,
-            columns_for_singleview_pca=columns_for_singleview_pca,
-            device=device,
-        )
-        # compute all the parameters needed for the loss
-        self.pca()
-        # select epsilon based on constructor inputs
-        if epsilon is not None:
-            warnings.warn(
-                "Using absolute epsilon=%.2f for pca loss; empirical epsilon ignored"
-                % epsilon
-            )
-            self.epsilon = torch.tensor(epsilon, dtype=torch.float, device=self.device)
-        else:
-            # empirically compute epsilon, already converted to tensor
-            self.epsilon = self.pca.parameters["epsilon"] * empirical_epsilon_multiplier
 
-            warnings.warn(
-                "Using empirical epsilon=%.3f * multiplier=%.3f -> total=%.3f for %s loss"
-                % (
-                    float(self.pca.parameters["epsilon"]),
-                    float(empirical_epsilon_multiplier),
-                    float(self.epsilon),
-                    self.loss_name,
-                )
+        def _setup_pca():
+            # initialize keypoint pca module
+            # this module will fit pca on training data, and will define the error metric
+            # and fuction to be used in model training.
+            self.pca = KeypointPCA(
+                loss_type=self.loss_name,
+                data_module=data_module,
+                components_to_keep=components_to_keep,
+                empirical_epsilon_percentile=empirical_epsilon_percentile,
+                mirrored_column_matches=mirrored_column_matches,
+                columns_for_singleview_pca=columns_for_singleview_pca,
+                device=self.device,
             )
+            self.pca()
+            # select epsilon based on constructor inputs
+            if epsilon is not None:
+                warnings.warn(
+                    "Using absolute epsilon=%.2f for pca loss; empirical epsilon ignored"
+                    % epsilon
+                )
+                self.epsilon = torch.tensor(epsilon, dtype=torch.float, device=self.device)
+            else:
+                # empirically compute epsilon, already converted to tensor
+                self.epsilon = self.pca.parameters["epsilon"] * empirical_epsilon_multiplier
+
+                warnings.warn(
+                    "Using empirical epsilon=%.3f * multiplier=%.3f -> total=%.3f for %s loss"
+                    % (
+                        float(self.pca.parameters["epsilon"]),
+                        float(empirical_epsilon_multiplier),
+                        float(self.epsilon),
+                        self.loss_name,
+                    )
+                )
+        self._setup_pca = _setup_pca
+
+    def setup(self):
+        self._setup_pca()
 
     def remove_nans(self, **kwargs):
         # find nans in the targets, and do a masked_select operation

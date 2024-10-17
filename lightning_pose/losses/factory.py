@@ -31,6 +31,11 @@ class LossFactory(pl.LightningModule):
         # initialize loss classes
         self._initialize_loss_instances()
 
+    def setup(self):
+        for loss_name, loss_instance in self.loss_instance_dict.items():
+            loss_instance.to(self.device)
+            loss_instance.setup()
+
     def _initialize_loss_instances(self):
         self.loss_instance_dict = {}
         loss_classes_dict = get_loss_classes()

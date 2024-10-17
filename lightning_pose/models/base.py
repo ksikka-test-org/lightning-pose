@@ -9,6 +9,7 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import MultiStepLR
 from torchtyping import TensorType
 from typeguard import typechecked
+import hashlib
 
 from lightning_pose.data.utils import (
     BaseLabeledBatchDict,
@@ -433,7 +434,20 @@ class BaseSupervisedTracker(BaseFeatureExtractor):
     ) -> dict:
         """Return predicted coordinates for a batch of data."""
         raise NotImplementedError
+    def hash_model_parameters(self):
+        """
+        Calculates a deterministic hash of all model parameters.
 
+        Args:
+            model: The PyTorch model.
+
+        Returns:
+            A hexadecimal string representing the hash.
+        """
+        hasher = hashlib.sha256()  # Choose a suitable hash function
+        for param in self.parameters():
+            hasher.update(param.data.cpu().numpy().tobytes())
+        return hasher.hexdigest()
     def evaluate_labeled(
         self,
         batch_dict: Union[
@@ -458,7 +472,11 @@ class BaseSupervisedTracker(BaseFeatureExtractor):
         if stage:
             # logging with sync_dist=True will average the metric across GPUs in 
             # multi-GPU training. Performance overhead was found negligible.
+            if stage == 'val':
+                local_tensor = torch.tensor([self.trainer.global_rank])
 
+                print("Rank: %s, loss_rmse: %f" % (self.trainer.global_rank, loss_rmse))
+                print(self.hash_model_parameters())
             # log overall supervised loss
             self.log(f"{stage}_supervised_loss", loss, prog_bar=True, sync_dist=True)
             # log supervised pixel_error
@@ -517,6 +535,10 @@ class BaseSupervisedTracker(BaseFeatureExtractor):
 @typechecked
 class SemiSupervisedTrackerMixin(object):
     """Mixin class providing training step function for semi-supervised models."""
+    def setup(self, stage):
+        super().setup(stage)
+        self.loss_factory_unsup.to(self.device)
+        self.loss_factory_unsup.setup()
 
     def get_loss_inputs_unlabeled(self, batch_dict: UnlabeledBatchDict) -> dict:
         """Return predicted heatmaps and their softmaxes (estimated keypoints)."""

@@ -6,7 +6,7 @@ from omegaconf import DictConfig
 from lightning_pose.train import train
 
 
-@hydra.main(config_path="configs", config_name="config_mirror-mouse-example")
+@hydra.main(config_path="configs", config_name="config_mirror-mouse")
 def train_model(cfg: DictConfig):
     """Main fitting function, accessed from command line.
 
