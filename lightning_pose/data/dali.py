@@ -42,6 +42,8 @@ def video_pipe(
     pad_last_batch: bool = False,
     imgaug: str = "default",
     skip_vfr_check: bool = True,
+    shard_id = 0,
+    num_shards = 1,
     # arguments consumed by decorator:
     # batch_size,
     # num_threads,
@@ -103,6 +105,8 @@ def video_pipe(
             pad_last_batch=pad_last_batch,  # Important for context loaders
             file_list_include_preceding_frame=True,  # to get rid of dali warnings
             skip_vfr_check=skip_vfr_check,
+            shard_id=shard_id,
+            num_shards=num_shards,
         )
         orig_size = fn.shapes(video)
         if resize_dims:
@@ -171,11 +175,15 @@ class LitDaliWrapper(DALIGenericIterator):
         self.do_context = do_context
         self.eval_mode = eval_mode
         self.batch_sampler = 1  # hack to get around DALI-ptl issue
+        self.multi_gpu = "shard_id" in kwargs
         # call parent
         super().__init__(*args, **kwargs)
 
     def __len__(self) -> int:
-        return self.num_iters
+        if self.multi_gpu:
+            raise NotImplementedError()
+        else:
+            return self.num_iters
 
     @staticmethod
     def _dali_output_to_tensors(
@@ -256,6 +264,9 @@ class PrepareDALI(object):
         dali_config: Union[dict, DictConfig] = None,
         imgaug: Optional[str] = "default",
         num_threads: int = 1,
+        shard_id = 0,
+        num_shards = 1,
+        device_id = 0,
     ) -> None:
 
         # determine if we have a multiview pipeline
@@ -279,6 +290,9 @@ class PrepareDALI(object):
         self.dali_config = dali_config
         self.num_threads = num_threads
         self.frame_count = count_frames(self.filenames)
+        self.shard_id = shard_id
+        self.num_shards = num_shards
+        self.device_id = device_id
         self._pipe_dict: dict = self._setup_pipe_dict(self.filenames, imgaug)
 
     @property
@@ -347,6 +361,10 @@ class PrepareDALI(object):
             "device": "gpu",
             "imgaug": imgaug,
         }
+        if gen_cfg['multi_gpu']:
+            dict_args['train']['base']["device_id"] = self.device_id
+            dict_args['train']['base']["shard_id"] = self.shard_id
+            dict_args['train']['base']["num_shards"] = self.num_shards
 
         # base (vanilla single-frame model), predict pipe args
         base_pred_cfg = self.dali_config["base"]["predict"]
@@ -403,6 +421,10 @@ class PrepareDALI(object):
             "device": "gpu",
             "imgaug": imgaug,
         }
+        if gen_cfg['multi_gpu']:
+            dict_args['train']['context']["device_id"] = self.device_id
+            dict_args['train']['context']["shard_id"] = self.shard_id
+            dict_args['train']['context']["num_shards"] = self.num_shards
         # our floor above should prevent us from getting to the very final batch.
 
         return dict_args

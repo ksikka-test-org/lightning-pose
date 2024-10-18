@@ -31,12 +31,12 @@ def test_train(cfg, tmpdir):
 
     # change directory to save outputs elsewhere
     os.chdir(tmpdir)
-
-    # train model
-    train(cfg_tmp)
-
-    # change directory back
-    os.chdir(pwd)
+    try:
+        # train model
+        train(cfg_tmp)
+    finally:
+        # change directory back
+        os.chdir(pwd)
 
     # ensure labeled data was properly processed
     assert os.path.isfile(os.path.join(tmpdir, "config.yaml"))
@@ -82,14 +82,13 @@ def test_train_multiview(cfg_multiview, tmpdir):
     cfg_tmp.eval.predict_vids_after_training = True
     cfg_tmp.eval.save_vids_after_training = True
 
-    # change directory to save outputs elsewhere
     os.chdir(tmpdir)
-
-    # train model
-    train(cfg_tmp)
-
-    # change directory back
-    os.chdir(pwd)
+    try:
+        # train model
+        train(cfg_tmp)
+    finally:
+        # change directory back
+        os.chdir(pwd)
 
     assert os.path.isfile(os.path.join(tmpdir, "config.yaml"))
 

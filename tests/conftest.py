@@ -398,7 +398,6 @@ def base_data_module_combined(cfg, base_dataset) -> UnlabeledDataModule:
         dataset=base_dataset,
         video_dir=os.path.join(TOY_DATA_ROOT_DIR, "videos"),
     )
-    # data_module.setup()  # already done in UnlabeledDataModule constructor
 
     # return to tests
     yield data_module
@@ -420,7 +419,6 @@ def heatmap_data_module_combined(cfg, heatmap_dataset) -> UnlabeledDataModule:
         dataset=heatmap_dataset,
         video_dir=os.path.join(TOY_DATA_ROOT_DIR, "videos"),
     )
-    # data_module.setup()  # already done in UnlabeledDataModule constructor
 
     # return to tests
     yield data_module
@@ -445,7 +443,6 @@ def multiview_heatmap_data_module_combined(
         dataset=multiview_heatmap_dataset,
         video_dir=os.path.join(cfg_multiview.data.data_dir, "videos"),
     )
-    # data_module.setup()  # already done in UnlabeledDataModule constructor
 
     # return to tests
     yield data_module
@@ -467,7 +464,6 @@ def heatmap_data_module_combined_context(cfg, heatmap_dataset_context) -> Unlabe
         dataset=heatmap_dataset_context,
         video_dir=os.path.join(TOY_DATA_ROOT_DIR, "videos"),
     )
-    # data_module.setup()  # already done in UnlabeledDataModule constructor
 
     # return to tests
     yield data_module
@@ -492,7 +488,6 @@ def multiview_heatmap_data_module_combined_context(
         dataset=multiview_heatmap_dataset_context,
         video_dir=os.path.join(cfg_multiview.data.data_dir, "videos"),
     )
-    # data_module.setup()  # already done in UnlabeledDataModule constructor
 
     # return to tests
     yield data_module

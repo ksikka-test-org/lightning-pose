@@ -113,6 +113,7 @@ model:
 dali:
   general:
     seed: 123456
+    multi_gpu: true
   base:
     train:
       sequence_length: 16 # step = sequence_length by default. done internally

@@ -77,7 +77,7 @@ class BaseDataModule(pl.LightningDataModule):
         self.test_dataset = None  # populated by self.setup()
         self.torch_seed = torch_seed
 
-    def setup(self, stage: Optional[str] = None) -> None:  # stage arg needed for ptl
+    def setup(self, stage: Optional[str] = None) -> None:
 
         datalen = self.dataset.__len__()
         print(f"Number of labeled images in the full dataset (train+val+test): {datalen}")
@@ -229,8 +229,8 @@ class UnlabeledDataModule(BaseDataModule):
         self.dali_config = dali_config
         self.unlabeled_dataloader = None  # initialized in setup_unlabeled
         self.imgaug = imgaug
-        # TODO: Should these belong in a setup method that called by lightning,
-        # rather than __init__? BaseDataModule already follows that pattern.
+
+    def setup(self, stage: Optional[str] = None) -> None:
         super().setup()
         self.setup_unlabeled()
 
@@ -244,6 +244,9 @@ class UnlabeledDataModule(BaseDataModule):
             dali_config=self.dali_config,
             imgaug=self.imgaug,
             num_threads=self.num_workers_for_unlabeled,
+            device_id=self.trainer.device.index,
+            shard_id=self.global_rank,
+            num_shards=self.world_size,
         )
 
         self.unlabeled_dataloader = dali_prep()
