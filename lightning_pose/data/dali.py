@@ -325,6 +325,7 @@ class PrepareDALI(object):
         imgaug: str,
     ) -> Dict[str, dict]:
         """All of the pipeline args in one place."""
+        device_id = int(os.environ.get("LOCAL_RANK", "0"))
 
         dict_args = {
             "predict": {"context": {}, "base": {}},
@@ -340,9 +341,9 @@ class PrepareDALI(object):
             "sequence_length": base_train_cfg["sequence_length"],
             "step": base_train_cfg["sequence_length"],
             "batch_size": 1,
-            "seed": gen_cfg["seed"],
+            "seed": gen_cfg["seed"] + device_id,
             "num_threads": self.num_threads,
-            "device_id": 0,
+            "device_id": device_id,
             "random_shuffle": True,
             "device": "gpu",
             "imgaug": imgaug,
@@ -356,9 +357,9 @@ class PrepareDALI(object):
             "sequence_length": base_pred_cfg["sequence_length"],
             "step": base_pred_cfg["sequence_length"],
             "batch_size": 1,
-            "seed": gen_cfg["seed"],
+            "seed": gen_cfg["seed"] + device_id,
             "num_threads": self.num_threads,
-            "device_id": 0,
+            "device_id": device_id,
             "random_shuffle": False,
             "device": "gpu",
             "name": "reader",
@@ -375,11 +376,11 @@ class PrepareDALI(object):
             "step": context_pred_cfg["sequence_length"] - 4,
             "batch_size": 1,
             "num_threads": self.num_threads,
-            "device_id": 0,
+            "device_id": device_id,
             "random_shuffle": False,
             "device": "gpu",
             "name": "reader",
-            "seed": gen_cfg["seed"],
+            "seed": gen_cfg["seed"] + device_id,
             "pad_sequences": True,
             # "pad_last_batch": True,
             "imgaug": "default",  # no imgaug when predicting
@@ -396,9 +397,9 @@ class PrepareDALI(object):
             "sequence_length": context_train_cfg["batch_size"],
             "step": context_train_cfg["batch_size"],
             "batch_size": 1,
-            "seed": gen_cfg["seed"],
+            "seed": gen_cfg["seed"] + device_id,
             "num_threads": self.num_threads,
-            "device_id": 0,
+            "device_id": device_id,
             "random_shuffle": True,
             "device": "gpu",
             "imgaug": imgaug,

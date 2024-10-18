@@ -4,9 +4,9 @@ data:
     height: 256
     width: 256
   # ABSOLUTE path to data directory
-  data_dir: /home/zeus/content/data/mirror-mouse
+  data_dir: data/mirror-mouse
   # ABSOLUTE path to unlabeled videos' directory
-  video_dir: /home/zeus/content/data/mirror-mouse/videos
+  video_dir: videos
   # location of labels; for example script, this should be relative to `data_dir`
   csv_file: CollectedData.csv
   # downsample heatmaps - 2 | 3
@@ -51,7 +51,7 @@ training:
   # dlc-top-down- dlc augmentations plus vertical and horizontal flips
   imgaug: dlc
   # batch size of labeled data during training
-  train_batch_size: 8
+  train_batch_size: 16
   # batch size of labeled data during validation
   val_batch_size: 48
   # batch size of labeled data during test
@@ -62,7 +62,7 @@ training:
   val_prob: 0.1
   # <=1 - fraction of total train frames (determined by `train_prob`) used for training
   # >1 - number of total train frames used for training
-  train_frames: 1
+  train_frames: 0.5
   # number of gpus to train a single model
   num_gpus: 1
   # number of cpu workers for data loaders
@@ -72,8 +72,8 @@ training:
   # epoch at which backbone network weights begin updating
   unfreezing_epoch: 20
   # max training epochs; training may exit before due to early stopping
-  min_epochs: 300
-  max_epochs: 750
+  min_epochs: 100
+  max_epochs: 100
   # frequency to log training metrics (one step is one batch)
   log_every_n_steps: 10
   # frequency to log validation metrics
@@ -87,16 +87,16 @@ training:
   lr_scheduler: multisteplr
   lr_scheduler_params:
     multisteplr:
-      milestones: [150, 200, 250]
+      milestones: [55, 65, 80]
       gamma: 0.5
 
 model:
   # list of unsupervised losses
-  losses_to_use: []
+  losses_to_use: ['pca_singleview', 'temporal']
   # backbone network
   backbone: resnet50_animal_ap10k
   # prediction mode: regression | heatmap | heatmap_mhcrnn (context)
-  model_type: heatmap
+  model_type: heatmap_mhcrnn
   # which heatmap loss to use
   heatmap_loss_type: mse
   # tt expt name
@@ -168,7 +168,7 @@ eval:
     port: 5151 # port to launch the app on.
 
   # str with an absolute path to a directory containing videos for prediction.
-  test_videos_directory: /home/zeus/content/data/mirror-mouse/videos
+  test_videos_directory: data/mirror-mouse/videos
   # confidence threshold for plotting a vid
   confidence_thresh_for_vid: 0.90
 
@@ -179,3 +179,7 @@ callbacks:
     increase_factor: 0.01
     final_val: 1.0
     freeze_until_epoch: 0
+
+hydra:
+  run:
+    dir: outputs/multi_gpu_context/${now:%H-%M-%S}
