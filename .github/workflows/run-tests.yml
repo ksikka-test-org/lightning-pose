@@ -6,10 +6,13 @@ name: Run tests
 on:
   # Allow manually running from Github UI or API.
   workflow_dispatch:
+
   # Allow triggering from a merge queue.
   # We will not allow merging PRs that fail CI.
   merge_group:
     types: [checks_requested]
+  pull_request:
+    types: [opened, reopened]
 jobs:
   build-linux:
     # Ships with python 3.10. Using it saves time installing it.
