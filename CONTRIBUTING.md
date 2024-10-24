@@ -1,5 +1,6 @@
 # Contributing
 
+
 We welcome community contributions to the Lightning Pose repo! 
 If you have found a bug or would like to request a minor change, please 
 [open an issue](https://github.com/danbider/lightning-pose/issues).
